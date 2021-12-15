@@ -22,6 +22,7 @@ resource "aws_iam_role" "main" {
 
 data "aws_iam_policy_document" "role_policy_doc" {
   statement {
+    sid    = "S3ListPermissions"
     effect = "Allow"
     actions = [
       "s3:ListBucket",
@@ -32,11 +33,23 @@ data "aws_iam_policy_document" "role_policy_doc" {
     ]
   }
   statement {
+    sid     = "S3AllowedPermissions"
     effect  = "Allow"
     actions = var.allowed_actions
     resources = [
       format("%s/%s*", var.home_directory_bucket.arn, var.home_directory_key_prefix)
     ]
+  }
+  
+  dynamic "statement" {
+    for_each = var.additional_role_statements
+
+    content {
+      sid       = statement.value["sid"]
+      effect    = statement.value["effect"]
+      actions   = statement.value["actions"]
+      resources = statement.value["resources"]
+    }
   }
 }
 
